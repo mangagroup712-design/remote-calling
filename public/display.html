@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>番号呼び出しディスプレイ</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      margin: 0;
+      background-color: #f5f7fb;
+      color: #1d2733;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      margin: 0;
+      padding: 18px 20px;
+      text-align: center;
+      font-size: clamp(2.2rem, 4.2vw, 4rem);
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+      border-bottom: 2px solid #d6dfeb;
+      background: #ffffff;
+      color: #1f2a36;
+    }
+
+    .layout {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    .panel {
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .calling-panel {
+      background-color: #fff4f4;
+      border-right: 3px solid #f2c9c9;
+    }
+
+    .waiting-panel {
+      background-color: #eef4fb;
+    }
+
+    h2 {
+      font-size: 2.1rem;
+      text-align: center;
+      margin: 0;
+      border-bottom: 2px solid #d5deea;
+      padding-bottom: 10px;
+    }
+
+    .number-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: center;
+      align-content: flex-start;
+      overflow-y: auto;
+      padding: 8px 4px 12px;
+    }
+
+    .card {
+      background: #ffffff;
+      color: #203040;
+      border: 1px solid #dbe4ef;
+      border-radius: 12px;
+      padding: 18px 36px;
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      font-weight: 700;
+      text-align: center;
+      min-width: 140px;
+    }
+
+    .calling-panel .card {
+      color: #ff1f1f;
+      font-weight: 900;
+      background: rgba(255, 61, 61, 0.2);
+      border: 2px solid rgba(255, 90, 90, 0.5);
+      box-shadow: 0 0 0 6px rgba(255, 64, 64, 0.08);
+      animation: blinkRed 1s steps(1, end) infinite;
+    }
+
+    @keyframes blinkRed {
+      0%, 45% {
+        color: #ff1515;
+        background: rgba(255, 61, 61, 0.3);
+        box-shadow: 0 0 0 8px rgba(255, 64, 64, 0.16);
+      }
+      50%, 100% {
+        color: #ffd7d7;
+        background: rgba(255, 61, 61, 0.12);
+        box-shadow: 0 0 0 4px rgba(255, 64, 64, 0.05);
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>3Dプリンターキーホルダー印刷待ち</h1>
+  <div class="layout">
+    <div class="panel calling-panel">
+      <h2>呼び出し中</h2>
+      <div id="callingList" class="number-list"></div>
+    </div>
+    <div class="panel waiting-panel">
+      <h2>呼び出し待機中</h2>
+      <div id="waitingList" class="number-list"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // 画面の更新
+    socket.on('update', (data) => {
+      document.getElementById('callingList').innerHTML = data.calling.map(n => `<div class="card">${n}</div>`).join('');
+      document.getElementById('waitingList').innerHTML = data.waiting.map(n => `<div class="card">${n}</div>`).join('');
+    });
+
+    // 自動音声呼び出し
+    socket.on('play-audio', (number) => {
+      const text = `${number}番でお待ちのお客様、お越しください。`;
+      const uttr = new SpeechSynthesisUtterance(text);
+      uttr.lang = 'ja-JP';
+      uttr.rate = 1.0;
+      speechSynthesis.speak(uttr);
+    });
+  </script>
+</body>
+</html>

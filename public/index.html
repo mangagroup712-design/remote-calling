@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>番号管理画面</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; background: #f4f5f7; }
+    .controls { display: flex; gap: 10px; margin-bottom: 30px; background: #fff; padding: 20px; border-radius: 8px; }
+    input { font-size: 1.2rem; padding: 10px; flex: 1; }
+    button { font-size: 1.2rem; padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; }
+    .btn-add { background: #2196f3; color: white; }
+    .columns { display: flex; gap: 20px; }
+    .col { flex: 1; background: white; padding: 15px; border-radius: 8px; }
+    .item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 1.2rem; }
+    .btn-call { background: #ff9800; color: white; }
+    .btn-del { background: #f44336; color: white; }
+  </style>
+</head>
+<body>
+  <h1>番号札管理パネル</h1>
+
+  <form class="controls" onsubmit="addNumber(event)">
+    <input type="text" id="numInput" placeholder="番号を入力 (例: 101)" />
+    <button type="submit" class="btn-add">番号追加</button>
+  </form>
+
+  <div class="columns">
+    <div class="col">
+      <h3>呼び出し中 (消去ボタンで画面から消えます)</h3>
+      <div id="callingControl"></div>
+    </div>
+    <div class="col">
+      <h3>お待ち一覧</h3>
+      <div id="waitingControl"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    function addNumber(event) {
+      if (event) event.preventDefault();
+      const input = document.getElementById('numInput');
+      if (input.value.trim()) {
+        socket.emit('add-number', input.value.trim());
+        input.value = '';
+      }
+    }
+
+    function callNumber(num) {
+      socket.emit('call-number', num);
+    }
+
+    function removeCalling(num) {
+      socket.emit('remove-calling', num);
+    }
+
+    function removeWaiting(num) {
+      socket.emit('remove-waiting', num);
+    }
+
+    socket.on('update', (data) => {
+      // 呼び出し中リストの描画
+      document.getElementById('callingControl').innerHTML = data.calling.map(n => `
+        <div class="item">
+          <strong>${n}</strong>
+          <button class="btn-del" onclick="removeCalling('${n}')">完了（削除）</button>
+        </div>
+      `).join('');
+
+      // 待ちリストの描画
+      document.getElementById('waitingControl').innerHTML = data.waiting.map(n => `
+        <div class="item">
+          <strong>${n}</strong>
+          <div>
+            <button class="btn-call" onclick="callNumber('${n}')">呼び出す</button>
+            <button class="btn-del" onclick="removeWaiting('${n}')">削除</button>
+          </div>
+        </div>
+      `).join('');
+    });
+  </script>
+</body>
+</html>
